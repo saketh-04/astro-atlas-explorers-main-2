@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design system: All colors, gradients, fonts defined here. Colors in HSL. */
+
+@layer base {
+  :root {
+    /* Cosmic Theme - Deep Space Colors */
+    --background: 225 39% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 225 30% 10%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 30% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 225 20% 20%;
+    --muted-foreground: 217 10% 64%;
+
+    --accent: 330 81% 60%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 20% 20%;
+    --input: 225 20% 18%;
+    --ring: 239 84% 67%;
+
+    --radius: 0.75rem;
+
+    /* Cosmic Gradients */
+    --gradient-nebula: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 50%, hsl(239 84% 67%) 100%);
+    --gradient-galaxy: linear-gradient(180deg, hsl(225 39% 7%) 0%, hsl(239 50% 15%) 100%);
+    --gradient-cosmic: linear-gradient(135deg, hsl(239 84% 67% / 0.2) 0%, hsl(262 83% 58% / 0.2) 100%);
+
+    /* Glows & Effects */
+    --glow-primary: 0 0 20px hsl(239 84% 67% / 0.5);
+    --glow-secondary: 0 0 20px hsl(262 83% 58% / 0.5);
+    --glow-accent: 0 0 20px hsl(330 81% 60% / 0.5);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    background: linear-gradient(180deg, hsl(225 39% 7%) 0%, hsl(225 30% 10%) 100%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .starfield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .cosmic-glow {
+    text-shadow: var(--glow-primary);
+  }
+  
+  .glass-card {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border) / 0.3);
+  }
+  
+  .hover-glow {
+    transition: var(--transition-smooth);
+  }
+  
+  .hover-glow:hover {
+    box-shadow: var(--glow-primary);
+    transform: translateY(-2px);
+  }
+  
+  .nebula-gradient {
+    background: var(--gradient-nebula);
+  }
+  
+  .galaxy-gradient {
+    background: var(--gradient-galaxy);
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(239 84% 67% / 0.3);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(239 84% 67% / 0.6);
+    }
+  }
+}

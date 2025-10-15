@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milky Way Galaxy Explorer - AstroAtlas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #000;
+            cursor: grab;
+        }
+
+        body:active {
+            cursor: grabbing;
+        }
+
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: auto;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .title {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 40px rgba(102, 126, 234, 0.8);
+            animation: gradientShift 3s ease infinite, glow 2s ease-in-out infinite;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #a78bfa;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 25px;
+            padding: 30px;
+            color: white;
+            max-width: 400px;
+            pointer-events: auto;
+            animation: fadeInLeft 1s ease-out 0.5s both;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+
+        .info-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #a78bfa 0%, #667eea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateX(10px);
+        }
+
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #e0e7ff;
+        }
+
+        .controls {
+            position: absolute;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 25px;
+            padding: 25px;
+            pointer-events: auto;
+            animation: fadeInRight 1s ease-out 0.5s both;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        }
+
+        .control-btn {
+            display: block;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.8);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .stats {
+            position: absolute;
+            top: 130px;
+            right: 30px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 20px;
+            padding: 20px 25px;
+            color: white;
+            font-size: 1rem;
+            animation: fadeInRight 1s ease-out 0.8s both;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .stat-item {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            color: #e0e7ff;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(102, 126, 234, 0.3);
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .loading-subtext {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(167, 139, 250, 0.5);
+            border-radius: 12px;
+            padding: 15px 20px;
+            color: white;
+            font-size: 0.95rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            max-width: 250px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .interaction-hint {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            border-radius: 20px;
+            padding: 20px 25px;
+            color: white;
+            font-size: 0.95rem;
+            pointer-events: auto;
+            animation: fadeInUp 1s ease-out 1s both, pulse 2s ease-in-out 2s infinite;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .hint-title {
+            color: #a78bfa;
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .hint-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .hint-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .hint-icon {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -30px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { text-shadow: 0 0 40px rgba(102, 126, 234, 0.9), 0 0 60px rgba(118, 75, 162, 0.6); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+            }
+            .info-panel {
+                left: 15px;
+                bottom: 15px;
+                max-width: calc(100% - 120px);
+                padding: 20px;
+            }
+            .controls {
+                right: 15px;
+                padding: 15px;
+            }
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+            .stats {
+                display: none;
+            }
+            .interaction-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading Milky Way Galaxy...</div>
+        <div class="loading-subtext">Rendering 100,000+ stars</div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="overlay">
+        <div class="header">
+            <h1 class="title">🌌 MILKY WAY GALAXY</h1>
+            <p class="subtitle">Interactive 3D Exploration</p>
+            
+        </div>
+
+        <div class="info-panel">
+            <h2 class="info-title">Galaxy Information</h2>
+            <div class="info-item">
+                <div class="info-icon">⭐</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Total Stars</div>
+                    <div class="info-value">100-400 Billion</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-icon">📏</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Diameter</div>
+                    <div class="info-value">~100,000 Light-Years</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-icon">🌍</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Our Location</div>
+                    <div class="info-value">Orion Arm</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-icon">🕳️</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Central Black Hole</div>
+                    <div class="info-value">Sagittarius A*</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-icon">🔄</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Rotation Period</div>
+                    <div class="info-value">225 Million Years</div>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="info-icon">🌟</div>
+                <div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Galaxy Type</div>
+                    <div class="info-value">Barred Spiral</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Particles</span>
+                <span class="stat-value" id="starCount">100,000</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Rotation</span>
+                <span class="stat-value" id="rotation">Active</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Zoom</span>
+                <span class="stat-value" id="zoom">100%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">FPS</span>
+                <span class="stat-value" id="fps">60</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="playPause" title="Play/Pause Rotation">⏸️</button>
+            <button class="control-btn" id="zoomIn" title="Zoom In">➕</button>
+            <button class="control-btn" id="zoomOut" title="Zoom Out">➖</button>
+            <button class="control-btn" id="speedUp" title="Speed Up">⚡</button>
+            <button class="control-btn" id="speedDown" title="Slow Down">🐢</button>
+            <button class="control-btn" id="reset" title="Reset View">🔄</button>
+        </div>
+
+        <div class="interaction-hint">
+            <div class="hint-title">💡 Controls</div>
+            <div class="hint-item">
+                <span class="hint-icon">🖱️</span>
+                <span>Drag to rotate view</span>
+            </div>
+            <div class="hint-item">
+                <span class="hint-icon">🔍</span>
+                <span>Scroll to zoom</span>
+            </div>
+            <div class="hint-item">
+                <span class="hint-icon">⌨️</span>
+                <span>Space to pause/play</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, stars, galaxy, dust;
+        let isRotating = true;
+        let rotationSpeed = 0.001;
+        let mouseX = 0, mouseY = 0;
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0;
+        let cameraRotationX = 0, cameraRotationY = 0;
+        let lastTime = Date.now();
+        let frameCount = 0;
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.00008);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+            camera.position.set(0, 300, 1000);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('canvas'),
+                antialias: true,
+                alpha: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Create starfield background
+            createStarfield();
+
+            // Create galaxy spiral
+            createGalaxy();
+
+            // Create dust clouds
+            createDustClouds();
+
+            // Create central glow
+            createCentralGlow();
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x8b5cf6, 3, 3000);
+            pointLight.position.set(0, 0, 0);
+            scene.add(pointLight);
+
+            // Additional rim light
+            const rimLight = new THREE.PointLight(0x667eea, 1.5, 2000);
+            rimLight.position.set(500, 200, 500);
+            scene.add(rimLight);
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mousedown', onMouseDown);
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('wheel', onWheel);
+            document.addEventListener('keydown', onKeyDown);
+            
+            // Control buttons
+            document.getElementById('playPause').addEventListener('click', toggleRotation);
+            document.getElementById('zoomIn').addEventListener('click', () => zoomCamera(-150));
+            document.getElementById('zoomOut').addEventListener('click', () => zoomCamera(150));
+            document.getElementById('speedUp').addEventListener('click', () => changeSpeed(1.5));
+            document.getElementById('speedDown').addEventListener('click', () => changeSpeed(0.67));
+            document.getElementById('reset').addEventListener('click', resetView);
+
+            // Add tooltips
+            addTooltips();
+
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 2000);
+
+            animate();
+        }
+
+        function createStarfield() {
+            const starsGeometry = new THREE.BufferGeometry();
+            const starsMaterial = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 2,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            const starsVertices = [];
+            for (let i = 0; i < 20000; i++) {
+                const x = (Math.random() - 0.5) * 5000;
+                const y = (Math.random() - 0.5) * 5000;
+                const z = (Math.random() - 0.5) * 5000;
+                starsVertices.push(x, y, z);
+            }
+
+            starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+            stars = new THREE.Points(starsGeometry, starsMaterial);
+            scene.add(stars);
+        }
+
+        function createGalaxy() {
+            galaxy = new THREE.Group();
+
+            // Create 6 spiral arms for more detail
+            for (let arm = 0; arm < 6; arm++) {
+                const armGeometry = new THREE.BufferGeometry();
+                const armVertices = [];
+                const armColors = [];
+                const armSizes = [];
+
+                for (let i = 0; i < 4000; i++) {
+                    const angle = (arm * Math.PI / 3) + (i * 0.012);
+                    const radius = i * 0.35;
+                    
+                    // Add more variation and curl to arms
+                    const curl = i * 0.001;
+                    const x = Math.cos(angle + curl) * radius + (Math.random() - 0.5) * 60;
+                    const y = (Math.random() - 0.5) * 25 * (1 - i / 4000);
+                    const z = Math.sin(angle + curl) * radius + (Math.random() - 0.5) * 60;
+
+                    armVertices.push(x, y, z);
+
+                    // Enhanced color gradient
+                    const color = new THREE.Color();
+                    const t = i / 4000;
+                    const hue = 0.75 - t * 0.25;
+                    const saturation = 1.0 - t * 0.2;
+                    const lightness = 0.4 + t * 0.4;
+                    color.setHSL(hue, saturation, lightness);
+                    armColors.push(color.r, color.g, color.b);
+
+                    // Varying sizes
+                    armSizes.push(2 + Math.random() * 2);
+                }
+
+                armGeometry.setAttribute('position', new THREE.Float32BufferAttribute(armVertices, 3));
+                armGeometry.setAttribute('color', new THREE.Float32BufferAttribute(armColors, 3));
+                armGeometry.setAttribute('size', new THREE.Float32BufferAttribute(armSizes, 1));
+
+                const armMaterial = new THREE.PointsMaterial({
+                    size: 3,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending,
+                    sizeAttenuation: true
+                });
+
+                const armPoints = new THREE.Points(armGeometry, armMaterial);
+                galaxy.add(armPoints);
+            }
+
+            // Add central bar
+            const barGeometry = new THREE.BufferGeometry();
+            const barVertices = [];
+            const barColors = [];
+
+            for (let i = 0; i < 1000; i++) {
+                const x = (Math.random() - 0.5) * 200;
+                const y = (Math.random() - 0.5) * 30;
+                const z = (Math.random() - 0.5) * 80;
+
+                barVertices.push(x, y, z);
+
+                const color = new THREE.Color();
+                color.setHSL(0.75, 1.0, 0.6);
+                barColors.push(color.r, color.g, color.b);
+            }
+
+            barGeometry.setAttribute('position', new THREE.Float32BufferAttribute(barVertices, 3));
+            barGeometry.setAttribute('color', new THREE.Float32BufferAttribute(barColors, 3));
+
+            const barMaterial = new THREE.PointsMaterial({
+                size: 3.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+
+            const bar = new THREE.Points(barGeometry, barMaterial);
+            galaxy.add(bar);
+
+            // Tilt the galaxy
+            galaxy.rotation.x = Math.PI / 5;
+            scene.add(galaxy);
+        }
+
+        function createDustClouds() {
+            dust = new THREE.Group();
+
+            for (let cloud = 0; cloud < 5; cloud++) {
+                const dustGeometry = new THREE.BufferGeometry();
+                const dustVertices = [];
+                const dustColors = [];
+
+                for (let i = 0; i < 2000; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 200 + Math.random() * 800;
+                    
+                    const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 200;
+                    const y = (Math.random() - 0.5) * 100;
+                    const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 200;
+
+                    dustVertices.push(x, y, z);
+
+                    const color = new THREE.Color();
+                    color.setHSL(0.7, 0.3, 0.2);
+                    dustColors.push(color.r, color.g, color.b);
+                }
+
+                dustGeometry.setAttribute('position', new THREE.Float32BufferAttribute(dustVertices, 3));
+                dustGeometry.setAttribute('color', new THREE.Float32BufferAttribute(dustColors, 3));
+
+                const dustMaterial = new THREE.PointsMaterial({
+                    size: 4,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.3,
+                    blending: THREE.AdditiveBlending
+                });
+
+                const dustCloud = new THREE.Points(dustGeometry, dustMaterial);
+                dust.add(dustCloud);
+            }
+
+            dust.rotation.x = Math.PI / 5;
+            scene.add(dust);
+        }
+
+        function createCentralGlow() {
+            // Core glow
+            const glowGeometry = new THREE.SphereGeometry(60, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x8b5cf6,
+                transparent: true,
+                opacity: 0.8
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            galaxy.add(glow);
+
+            // Middle layer
+            const midGlowGeometry = new THREE.SphereGeometry(100, 32, 32);
+            const midGlowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x764ba2,
+                transparent: true,
+                opacity: 0.5
+            });
+            const midGlow = new THREE.Mesh(midGlowGeometry, midGlowMaterial);
+            galaxy.add(midGlow);
+
+            // Outer glow
+            const outerGlowGeometry = new THREE.SphereGeometry(140, 32, 32);
+            const outerGlowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x667eea,
+                transparent: true,
+                opacity: 0.25
+            });
+            const outerGlow = new THREE.Mesh(outerGlowGeometry, outerGlowMaterial);
+            galaxy.add(outerGlow);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Calculate FPS
+            frameCount++;
+            const currentTime = Date.now();
+            if (currentTime >= lastTime + 1000) {
+                document.getElementById('fps').textContent = frameCount;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+
+            // Rotate stars slowly
+            stars.rotation.x += 0.00005;
+            stars.rotation.y += 0.0001;
+
+            // Rotate galaxy
+            if (isRotating) {
+                galaxy.rotation.z += rotationSpeed;
+                dust.rotation.z += rotationSpeed * 0.8;
+            }
+
+            // Smooth camera movement
+            if (!isDragging) {
+                camera.position.x += (mouseX * 0.3 - camera.position.x) * 0.02;
+                camera.position.y += (mouseY * 0.3 - camera.position.y) * 0.02;
+            }
+            
+            camera.lookAt(scene.position);
+
+            // Update zoom display
+            const zoomPercent = Math.round((1000 / camera.position.z) * 100);
+            document.getElementById('zoom').textContent = zoomPercent + '%';
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            if (isDragging) {
+                const deltaX = event.clientX - previousMouseX;
+                const deltaY = event.clientY - previousMouseY;
+                
+                cameraRotationY += deltaX * 0.005;
+                cameraRotationX += deltaY * 0.005;
+                
+                cameraRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotationX));
+                
+                camera.position.x = Math.sin(cameraRotationY) * camera.position.z;
+                camera.position.y = Math.sin(cameraRotationX) * camera.position.z;
+                
+                previousMouseX = event.clientX;
+                previousMouseY = event.clientY;
+            } else {
+                mouseX = (event.clientX - window.innerWidth / 2) * 0.1;
+                mouseY = (event.clientY - window.innerHeight / 2) * 0.1;
+            }
+        }
+
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMouseX = event.clientX;
+            previousMouseY = event.clientY;
+        }
+
+        function onMouseUp() {
+            isDragging = false;
+        }
+
+        function onWheel(event) {
+            event.preventDefault();
+            const delta = event.deltaY * 0.5;
+            zoomCamera(delta);
+        }
+
+        function onKeyDown(event) {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                toggleRotation();
+            }
+        }
+
+        function toggleRotation() {
+            isRotating = !isRotating;
+            const btn = document.getElementById('playPause');
+            btn.textContent = isRotating ? '⏸️' : '▶️';
+            document.getElementById('rotation').textContent = isRotating ? 'Active' : 'Paused';
+        }
+
+        function zoomCamera(amount) {
+            camera.position.z += amount;
+            camera.position.z = Math.max(200, Math.min(2500, camera.position.z));
+        }
+
+        function changeSpeed(multiplier) {
+            rotationSpeed *= multiplier;
+            rotationSpeed = Math.max(0.0001, Math.min(0.005, rotationSpeed));
+        }
+
+        function resetView() {
+            camera.position.set(0, 300, 1000);
+            camera.rotation.set(0, 0, 0);
+            cameraRotationX = 0;
+            cameraRotationY = 0;
+            rotationSpeed = 0.001;
+            isRotating = true;
+            document.getElementById('playPause').textContent = '⏸️';
+            document.getElementById('rotation').textContent = 'Active';
+        }
+
+        function addTooltips() {
+            const buttons = document.querySelectorAll('.control-btn');
+            const tooltip = document.getElementById('tooltip');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', (e) => {
+                    const title = btn.getAttribute('title');
+                    tooltip.textContent = title;
+                    tooltip.classList.add('show');
+                    updateTooltipPosition(e);
+                });
+
+                btn.addEventListener('mousemove', updateTooltipPosition);
+
+                btn.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('show');
+                });
+            });
+
+            function updateTooltipPosition(e) {
+                tooltip.style.left = e.pageX + 15 + 'px';
+                tooltip.style.top = e.pageY + 15 + 'px';
+            }
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
