@@ -7,7 +7,8 @@ const Favorite = require('./models/Favorite');
 const Collection = require('./models/Collection');
 
 // Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/astroatlas';
+const MONGODB_URI = process.env.MONGODB_URI;
+
 
 async function connectDB() {
   try {
